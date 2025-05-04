@@ -1,0 +1,72 @@
+name: 'airflow_dbt_snowflake'
+version: '1.0.0'
+config-version: 2
+
+profile: 'snowflake'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+seeds:
+  airflow_dbt_snowflake:
+    +enabled: true
+    +docs:
+      show: true
+    hcp_master:
+      +column_types:
+        years_of_practice: integer
+        potential_score: integer
+        influence_score: integer
+        created_at: date
+    prescriptions:
+      +column_types:
+        num_prescriptions: integer
+        total_units: integer
+    hcp_visits:
+      +column_types:
+        duration_minutes: integer
+        engagement_score: integer
+    products:
+      +column_types:
+        price_per_unit: float
+        annual_revenue_target: integer
+    territories:
+      +column_types:
+        potential_value: integer
+
+models:
+  airflow_dbt_snowflake:
+    # Default materialization for all models
+    +materialized: view
+    
+    # Staging models
+    staging:
+      +materialized: view
+      +docs:
+        node_color: "#BCBCBC"  # Light gray for staging models
+    
+    # Intermediate models
+    intermediate:
+      +materialized: view
+      +docs:
+        node_color: "#4682B4"  # Steel blue for intermediate models
+    
+    # Marts models (final layer)
+    marts:
+      +materialized: table
+      +docs:
+        node_color: "#228B22"  # Forest green for marts models
+
+  # Hide dbt_utils package in documentation
+  dbt_utils:
+    +docs:
+      show: false 

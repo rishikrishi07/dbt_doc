@@ -1,0 +1,285 @@
+version: 2
+
+seeds:
+  - name: hcp_master
+    description: >
+      Healthcare Provider (HCP) master data containing comprehensive information about healthcare
+      professionals across all specialties and regions. This dataset serves as the golden record
+      for all HCP-related information in our analytics ecosystem, powering sales territory 
+      alignment, targeting strategies, and engagement analytics.
+      
+      The dataset includes demographic information, practice details, specialty classifications,
+      contact information, territory associations, and proprietary scoring metrics for potential
+      and influence. All HCP identifiers are consistent across the enterprise data platform,
+      enabling seamless integration with other datasets like prescriptions and visits.
+      
+      Key use cases include:
+      - Sales force territory design and optimization
+      - HCP segmentation and targeting
+      - Promotional effectiveness analysis
+      - Market share analysis by physician specialty
+      - Engagement strategy development
+    meta:
+      owner: "Master Data Management Team"
+      update_frequency: "Weekly"
+      source_system: "CRM System"
+      freshness_criteria: "Updated every Monday by 8 AM"
+      primary_key: "hcp_id"
+      documentation_url: "https://confluence.example.com/hcp-master-data"
+      source_owner: "Global Master Data Management Office"
+      data_steward: "Jane Smith (jane.smith@company.com)"
+      data_engineering_squad: "Core Data Pipeline Team"
+      analytics_engineering_squad: "Commercial Analytics Team"
+      data_granularity: "Individual healthcare provider (1 row per unique HCP)"
+      refresh_frequency: "Weekly full refresh; daily incremental updates for new/changed records"
+      business_definitions: >
+        Potential Score: A proprietary algorithm-generated score (0-100) based on historical 
+        prescription volume, patient population, facility type, and specialty benchmarks. 
+        Scores are recalibrated quarterly to reflect market changes.
+        
+        Influence Score: A measure (0-10) of an HCP's influence in their specialty, calculated based 
+        on publication history, speaking engagements, academic affiliations, and peer network analysis.
+        
+        Key Target: HCPs with potential_score >= 70 AND influence_score >= 7
+        
+        Territory Alignment: The association between an HCP and a specific sales territory, managed 
+        through the Territory Management System and refreshed quarterly during alignment cycles.
+    columns:
+      - name: hcp_id
+        description: Unique identifier for the healthcare provider
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: First name of the healthcare provider
+      - name: last_name
+        description: Last name of the healthcare provider
+      - name: specialty
+        description: Medical specialty of the healthcare provider (e.g., Cardiologist, Pediatrician)
+      - name: facility
+        description: Type of facility where the healthcare provider practices (e.g., Hospital, Clinic)
+      - name: years_of_practice
+        description: Number of years the healthcare provider has been practicing medicine
+        data_type: integer
+      - name: state
+        description: US state abbreviation where the healthcare provider is located
+      - name: city
+        description: City where the healthcare provider is located
+      - name: zip_code
+        description: ZIP code of the healthcare provider's practice location
+      - name: email
+        description: Email address of the healthcare provider
+      - name: phone
+        description: Phone number of the healthcare provider
+      - name: territory_id
+        description: Territory ID the healthcare provider belongs to for sales organization purposes
+      - name: potential_score
+        description: Score representing the prescription potential of the healthcare provider (range 1-100)
+        data_type: integer
+      - name: influence_score
+        description: Score representing the healthcare provider's influence in their field (range 1-10)
+        data_type: integer
+      - name: created_at
+        description: Date when the healthcare provider record was created in the system
+        data_type: date
+
+  - name: hcp_visits
+    description: >
+      Record of visits made by medical representatives to healthcare providers.
+      Contains details about visit timing, duration, outcomes, and engagement metrics.
+    meta:
+      owner: "Field Operations Team"
+      update_frequency: "Daily"
+      source_system: "Field Force Mobile App"
+      freshness_criteria: "Updated daily by 11 PM"
+      primary_key: "visit_id"
+      documentation_url: "https://confluence.example.com/hcp-visits-data"
+    columns:
+      - name: visit_id
+        description: Unique identifier for each visit
+        tests:
+          - unique
+          - not_null
+      - name: hcp_id
+        description: "{{ doc('hcp_id') }}"
+        tests:
+          - not_null
+      - name: mr_id
+        description: Medical representative identifier who conducted the visit
+        tests:
+          - not_null
+      - name: visit_date
+        description: Date when the visit occurred
+        data_type: date
+      - name: visit_type
+        description: "{{ doc('visit_type') }}"
+      - name: duration_minutes
+        description: Duration of the visit in minutes
+        data_type: integer
+      - name: outcome
+        description: Outcome assessment of the visit (Very Positive, Positive, Neutral, Negative, Very Negative)
+      - name: engagement_score
+        description: "{{ doc('engagement_score') }}"
+        data_type: integer
+      - name: products_discussed
+        description: Comma-separated list of products discussed during the visit
+      - name: notes
+        description: Free text notes captured during or after the visit
+
+  - name: medical_representatives
+    description: >
+      Master data for medical representatives (sales force) containing 
+      personal information, territories assigned, and hire dates.
+    meta:
+      owner: "HR Analytics Team"
+      update_frequency: "Weekly"
+      source_system: "HR Information System"
+      freshness_criteria: "Updated every Monday by 9 AM"
+      primary_key: "mr_id"
+      documentation_url: "https://confluence.example.com/medical-reps-data"
+    columns:
+      - name: mr_id
+        description: Unique identifier for the medical representative
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: First name of the medical representative
+      - name: last_name
+        description: Last name of the medical representative
+      - name: email
+        description: Email address of the medical representative
+      - name: hire_date
+        description: Date when the medical representative was hired
+        data_type: date
+      - name: territory_ids
+        description: Comma-separated list of territory IDs assigned to the medical representative
+
+  - name: prescriptions
+    description: >
+      Aggregated prescription data by healthcare provider, product, and time period.
+      This seed contains the core metrics for analyzing prescription patterns and market share.
+    meta:
+      owner: "Commercial Analytics Team"
+      update_frequency: "Monthly"
+      source_system: "Third-party Prescription Data Vendor"
+      freshness_criteria: "Updated by the 5th of each month"
+      grain: "HCP-Product-Month"
+      documentation_url: "https://confluence.example.com/prescription-data"
+    columns:
+      - name: hcp_id
+        description: "{{ doc('hcp_id') }}"
+        tests:
+          - not_null
+      - name: product
+        description: "{{ doc('product') }}"
+        tests:
+          - not_null
+      - name: year_month
+        description: Year and month of the prescription data in YYYY-MM format
+        tests:
+          - not_null
+      - name: num_prescriptions
+        description: Number of prescriptions written by the HCP for the product in the given month
+        data_type: integer
+      - name: total_units
+        description: Total units of the product prescribed in the given month
+        data_type: integer
+
+  - name: products
+    description: >
+      Master data for pharmaceutical products including therapeutic areas, 
+      pricing information, and revenue targets.
+    meta:
+      owner: "Product Management Team"
+      update_frequency: "Quarterly"
+      source_system: "Product Catalog System"
+      freshness_criteria: "Updated at the start of each quarter"
+      primary_key: "product_id"
+      documentation_url: "https://confluence.example.com/product-catalog"
+    columns:
+      - name: product_id
+        description: Unique identifier for the product
+        tests:
+          - unique
+          - not_null
+      - name: product
+        description: "{{ doc('product') }}"
+      - name: therapeutic_area
+        description: Therapeutic or disease area that the product treats (e.g., Cardiovascular, Oncology)
+      - name: launch_date
+        description: Date when the product was launched to market
+        data_type: date
+      - name: price_per_unit
+        description: Current price per unit of the product in dollars
+        data_type: float
+      - name: annual_revenue_target
+        description: Annual revenue target for the product in dollars
+        data_type: integer
+
+  - name: territories
+    description: >
+      Sales territory definitions including geographical coverage,
+      regional groupings, and market potential values.
+    meta:
+      owner: "Sales Operations Team"
+      update_frequency: "Quarterly"
+      source_system: "Territory Alignment System"
+      freshness_criteria: "Updated at the start of each quarter"
+      primary_key: "territory_id"
+      documentation_url: "https://confluence.example.com/territory-definitions"
+    columns:
+      - name: territory_id
+        description: "{{ doc('territory_id') }}"
+        tests:
+          - unique
+          - not_null
+      - name: territory_name
+        description: Descriptive name for the territory
+      - name: region
+        description: Higher-level geographical grouping of territories (e.g., Northeast, West)
+      - name: states
+        description: Comma-separated list of state abbreviations included in the territory
+      - name: potential_value
+        description: Estimated market potential value of the territory in dollars
+        data_type: integer
+
+  - name: daily_sales
+    description: >
+      Daily sales transaction data used for demonstrating incremental loading patterns.
+      Contains detailed transaction-level data with timestamps for real-time analytics.
+    meta:
+      owner: "Sales Analytics Team"
+      update_frequency: "Daily"
+      source_system: "Point of Sale System"
+      freshness_criteria: "Updated every hour"
+      primary_key: "transaction_id"
+      documentation_url: "https://confluence.example.com/daily-sales-data"
+    columns:
+      - name: transaction_id
+        description: Unique identifier for each sales transaction
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: Identifier of the product sold
+        tests:
+          - not_null
+      - name: customer_id
+        description: Identifier of the customer who purchased the product
+      - name: transaction_date
+        description: Date and time when the transaction occurred
+        data_type: timestamp
+      - name: quantity
+        description: Number of units sold in the transaction
+        data_type: integer
+      - name: unit_price
+        description: Price per unit at the time of sale
+        data_type: float
+      - name: total_amount
+        description: Total monetary amount of the transaction
+        data_type: float
+      - name: payment_method
+        description: Method of payment used (e.g., Credit Card, Cash)
+      - name: store_id
+        description: Identifier of the store where the transaction occurred 

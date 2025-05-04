@@ -1,0 +1,89 @@
+version: 2
+
+sources:
+  - name: public
+    database: raw
+    schema: public
+    description: >
+      This source contains all raw data tables loaded from our operational systems into Snowflake.
+      Data is loaded daily via Airflow ETL pipelines and serves as the foundation for all analytics.
+    tables:
+      - name: hcp_master
+        description: >
+          Raw data for healthcare professionals (HCPs). Contains demographic information, 
+          specialties, contact details, and territory associations for all HCPs in our network.
+          This is a core reference table that powers many downstream analytics.
+        columns:
+          - name: hcp_id
+            description: Primary key uniquely identifying each healthcare professional
+          - name: territory_id
+            description: Foreign key to territories table indicating HCP's assigned sales territory
+
+      - name: hcp_visits
+        description: >
+          Raw data for visits to healthcare professionals by our medical representatives.
+          Each record represents a single interaction with detailed information about
+          visit outcomes, engagement levels, and products discussed during the interaction.
+        columns:
+          - name: visit_id
+            description: Primary key uniquely identifying each visit
+          - name: hcp_id
+            description: Foreign key to hcp_master table
+          - name: mr_id
+            description: Foreign key to medical_representatives table
+
+      - name: medical_representatives
+        description: >
+          Raw data for medical sales representatives. Contains information about our
+          sales force including personal details, territories covered, and employment history.
+          This data is crucial for territory performance analysis and rep effectiveness metrics.
+        columns:
+          - name: mr_id
+            description: Primary key uniquely identifying each medical representative
+          - name: territory_ids
+            description: Comma-separated list of territory_id values assigned to this representative
+
+      - name: prescriptions
+        description: >
+          Raw data for prescriptions written by HCPs. This table captures monthly aggregated
+          prescription data by HCP and product, forming the foundation of our market analysis
+          and sales performance metrics. Data is sourced from third-party prescription data vendors.
+        columns:
+          - name: hcp_id
+            description: Foreign key to hcp_master table
+          - name: product
+            description: Product name matching entries in the products table
+          - name: year_month
+            description: Year and month of prescription data in YYYY-MM format
+
+      - name: products
+        description: >
+          Raw data for pharmaceutical products in our portfolio. Contains product details,
+          pricing information, therapeutic classifications, and launch dates. This reference
+          table is essential for segmenting and analyzing our business by product line.
+        columns:
+          - name: product_id
+            description: Primary key uniquely identifying each product
+          - name: product
+            description: Product name used across all other tables
+
+      - name: territories
+        description: >
+          Raw data for sales territories. Defines our geographical sales organization structure
+          including territory boundaries, regional groupings, and market potential values.
+          This data drives territory alignment and resource allocation decisions.
+        columns:
+          - name: territory_id
+            description: Primary key uniquely identifying each territory
+          - name: region
+            description: Higher-level geographical grouping of territories
+
+      - name: daily_sales
+        description: >
+          Daily sales data for incremental loading demonstration. This table contains
+          transactional sales data at a daily grain and is updated continuously throughout
+          the day. It's used to power our real-time sales dashboards and reporting.
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        loaded_at_field: transaction_date 

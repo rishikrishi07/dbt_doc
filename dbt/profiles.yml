@@ -1,0 +1,14 @@
+snowflake:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: wcdnjfe-cbb94898
+      user: rishkrish
+      password: Rishkrish1234567
+      role: ACCOUNTADMIN
+      database: RAW
+      warehouse: COMPUTE_WH
+      schema: public
+      threads: 4
+      client_session_keep_alive: False

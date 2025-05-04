@@ -1,0 +1,227 @@
+version: 2
+
+models:
+  - name: fct_visits
+    description: >
+      Fact table for HCP visits with aggregated metrics and dimensions. This model is the primary
+      source for all visit analytics, performance tracking, and engagement analysis.
+      It combines visit data with HCP and medical representative information to provide
+      a comprehensive view of field force activities.
+    meta:
+      owner: "Sales Operations Team"
+      business_value: >
+        Used to track field force effectiveness, HCP engagement trends, and product promotion activities.
+        Key source for dashboards used by the sales leadership team and for territory performance reviews.
+      update_frequency: "Daily"
+      primary_key: "visit_id"
+    columns:
+      - name: visit_id
+        description: "Unique identifier for the visit"
+        tests:
+          - unique
+          - not_null
+      - name: visit_date
+        description: "Date when the visit occurred"
+      - name: visit_year
+        description: "Year of the visit"
+      - name: visit_month
+        description: "Month of the visit (1-12)"
+      - name: visit_quarter
+        description: "Quarter of the visit (1-4)"
+      - name: visit_type
+        description: "{{ doc('visit_type') }}"
+        meta:
+          valid_values: "In-person, Virtual, Phone call"
+      - name: duration_minutes
+        description: "Duration of the visit in minutes"
+      - name: outcome
+        description: "Outcome of the visit (Very Positive, Positive, Neutral, Negative, Very Negative)"
+        meta:
+          valid_values: "Very Positive, Positive, Neutral, Negative, Very Negative"
+      - name: engagement_score
+        description: "{{ doc('engagement_score') }}"
+        meta:
+          min_value: 0
+          max_value: 10
+      - name: products_discussed
+        description: "List of products discussed during the visit (comma-separated)"
+      - name: hcp_id
+        description: "{{ doc('hcp_id') }}"
+      - name: hcp_full_name
+        description: "Full name of the healthcare professional"
+      - name: hcp_specialty
+        description: "{{ doc('hcp_specialty') }}"
+      - name: hcp_facility
+        description: "Type of facility where the healthcare professional works"
+      - name: hcp_territory_id
+        description: "{{ doc('territory_id') }}"
+      - name: mr_id
+        description: "Medical representative identifier"
+      - name: mr_full_name
+        description: "Full name of the medical representative"
+      - name: mr_territory_ids
+        description: "Territories assigned to the medical representative (comma-separated)"
+      - name: is_positive_outcome
+        description: "Flag indicating if the visit outcome was positive (1) or not (0)"
+        meta:
+          is_flag: true
+      - name: is_negative_outcome
+        description: "Flag indicating if the visit outcome was negative (1) or not (0)"
+        meta:
+          is_flag: true
+      - name: is_high_engagement
+        description: "Flag indicating if the engagement score was high (>=7)"
+        meta:
+          is_flag: true
+
+  - name: fct_prescriptions
+    description: >
+      Fact table for prescriptions with revenue metrics. This is the core model for analyzing
+      prescription volume, market share, and revenue performance across products, territories,
+      and healthcare professionals. It combines prescription data with product pricing information
+      to calculate revenue metrics and track performance against targets.
+    meta:
+      owner: "Commercial Analytics Team"
+      business_value: >
+        Primary source for sales performance reporting, forecasting, and market analysis.
+        Used to calculate incentive compensation and evaluate return on investment for marketing initiatives.
+      update_frequency: "Monthly"
+      grain: "HCP-Product-Month"
+    columns:
+      - name: year_month
+        description: "Year and month of the prescription (YYYY-MM)"
+      - name: prescription_year
+        description: "Year of the prescription"
+      - name: prescription_month
+        description: "Month of the prescription (1-12)"
+      - name: hcp_id
+        description: "{{ doc('hcp_id') }}"
+      - name: hcp_full_name
+        description: "Full name of the healthcare professional"
+      - name: hcp_specialty
+        description: "{{ doc('hcp_specialty') }}"
+      - name: hcp_territory_id
+        description: "{{ doc('territory_id') }}"
+      - name: product
+        description: "{{ doc('product') }}"
+      - name: product_id
+        description: "Unique identifier for the product"
+      - name: therapeutic_area
+        description: "Therapeutic area of the product"
+      - name: territory_name
+        description: "Name of the territory where the HCP is located"
+      - name: region
+        description: "Region where the HCP's territory is located"
+      - name: num_prescriptions
+        description: "Number of prescriptions made in the given month"
+        meta:
+          is_kpi: true
+      - name: total_units
+        description: "Total units prescribed in the given month"
+        meta:
+          is_kpi: true
+      - name: price_per_unit
+        description: "Price per unit of the product in dollars"
+      - name: estimated_revenue
+        description: "{{ doc('estimated_revenue') }}"
+        meta:
+          is_kpi: true
+          calculation: "total_units * price_per_unit"
+      - name: annual_revenue_target
+        description: "Annual revenue target for the product in dollars"
+      - name: revenue_target_percentage
+        description: "Percentage of revenue target achieved by this prescription"
+        meta:
+          is_kpi: true
+          calculation: "(estimated_revenue / annual_revenue_target) * 100"
+
+  - name: dim_hcp
+    description: >
+      Dimension table for Healthcare Professionals with segmentation. This model serves as the
+      master reference for all HCP-related analytics, including segmentation, targeting, and
+      profiling. It enriches the base HCP data with territory information and derived
+      segmentation attributes based on potential and influence scores.
+    meta:
+      owner: "Master Data Management Team"
+      business_value: >
+        Enables targeted engagement strategies by providing a comprehensive view of HCP attributes
+        and segmentation. Used for territory design, targeting, and resource allocation decisions.
+      update_frequency: "Weekly"
+      primary_key: "hcp_id"
+    columns:
+      - name: hcp_id
+        description: "{{ doc('hcp_id') }}"
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "First name of the healthcare professional"
+      - name: last_name
+        description: "Last name of the healthcare professional"
+      - name: full_name
+        description: "Full name of the healthcare professional"
+      - name: specialty
+        description: "{{ doc('hcp_specialty') }}"
+        meta:
+          top_values: "Cardiology, Neurology, Oncology, Primary Care, Psychiatry"
+      - name: facility
+        description: "Type of facility where the healthcare professional works"
+        meta:
+          top_values: "Hospital, Private Practice, Clinic, Academic Center"
+      - name: years_of_practice
+        description: "Number of years the healthcare professional has been in practice"
+      - name: email
+        description: "Email address of the healthcare professional"
+      - name: phone
+        description: "Phone number of the healthcare professional"
+      - name: state
+        description: "State where the healthcare professional practices"
+      - name: city
+        description: "City where the healthcare professional practices"
+      - name: zip_code
+        description: "ZIP code of the healthcare professional's location"
+      - name: territory_id
+        description: "{{ doc('territory_id') }}"
+      - name: territory_name
+        description: "Name of the territory where the HCP is located"
+      - name: region
+        description: "Region where the HCP's territory is located"
+        meta:
+          top_values: "Northeast, Southeast, Midwest, Southwest, West"
+      - name: territory_states
+        description: "States included in the HCP's territory"
+      - name: territory_potential_value
+        description: "Potential market value of the HCP's territory in dollars"
+      - name: potential_score
+        description: "Potential value score of the healthcare professional (0-100)"
+        meta:
+          min_value: 0
+          max_value: 100
+      - name: influence_score
+        description: "Influence score of the healthcare professional (0-10)"
+        meta:
+          min_value: 0
+          max_value: 10
+      - name: created_at
+        description: "Date when the healthcare professional record was created"
+      - name: potential_category
+        description: "{{ doc('potential_category') }}"
+        meta:
+          calculation: >
+            Case when potential_score >= 70 then 'High'
+                 when potential_score >= 30 then 'Medium'
+                 else 'Low' end
+      - name: influence_category
+        description: "Category of influence (High, Medium, Low)"
+        meta:
+          calculation: >
+            Case when influence_score >= 7 then 'High'
+                 when influence_score >= 4 then 'Medium'
+                 else 'Low' end
+      - name: hcp_segment
+        description: "{{ doc('hcp_segment') }}"
+        meta:
+          business_definition: >
+            Key Target: High potential and high influence HCPs
+            Priority: High potential or high influence HCPs
+            Standard: Medium or low potential and influence HCPs 
